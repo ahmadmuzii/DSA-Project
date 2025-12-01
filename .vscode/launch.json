@@ -1,0 +1,33 @@
+{
+    "configurations": [
+        {
+            "name": "C/C++: Launch Calendar System", // <- New descriptive name
+            "type": "cppdbg",
+            "request": "launch",
+            // 🛑 FIX: Point directly to the executable name created by tasks.json
+            "program": "${fileDirname}\\calendar_app.exe", 
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\Program Files\\CodeBlocks\\MinGW\\bin\\gdb.exe",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            // 🛑 FIX: This task label must match the 'label' in your fixed tasks.json!
+            "preLaunchTask": "C/C++: Build Calendar System" 
+        }
+    ],
+    "version": "2.0.0"
+}

@@ -1,0 +1,35 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: Build Calendar System", // <-- NEW LABEL
+            "command": "C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                // 🛑 LIST ALL SOURCE FILES HERE 🛑
+                "${fileDirname}\\main.cpp",
+                "${fileDirname}\\calendar.cpp",
+                "${fileDirname}\\event.cpp",
+                "${fileDirname}\\file_manager.cpp",
+                "-o",
+                // 🛑 USE A FIXED EXECUTABLE NAME 🛑
+                "${fileDirname}\\calendar_app.exe",
+                // OPTIONAL: This helps fix the 'WinMain' error in some MinGW setups
+                "-Wl,-subsystem,console"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Builds the entire Calendar System project."
+        }
+    ],
+    "version": "2.0.0"
+}
