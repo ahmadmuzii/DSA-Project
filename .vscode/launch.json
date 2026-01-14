@@ -1,14 +1,16 @@
 {
     "configurations": [
+        
+
         {
             "name": "C/C++: Launch Calendar System", // <- New descriptive name
             "type": "cppdbg",
             "request": "launch",
             // 🛑 FIX: Point directly to the executable name created by tasks.json
-            "program": "${fileDirname}\\calendar_app.exe", 
+            "program": "${workspaceFolder}\\calendar_app.exe", 
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

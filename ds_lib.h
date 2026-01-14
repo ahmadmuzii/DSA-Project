@@ -4,10 +4,23 @@
 #include "event.h"
 #include <iostream>
 #include <iomanip>
+#include <string>
 
-// ==========================================
-// 1. LINKED LIST (For Collision Chaining & Events in a Day)
-// ==========================================
+const int HASH_TABLE_SIZE = 21;
+const int INITIAL_HEAP_CAPACITY = 100;
+
+static std::string convertToComparable(const std::string& date) {
+    if (date.length() != 10 || date[2] != ':' || date[5] != ':') {
+        return date;
+    }
+    
+    std::string year = date.substr(6, 4);
+    std::string month = date.substr(3, 2);
+    std::string day = date.substr(0, 2);
+    
+    return year + month + day;
+}
+
 struct ListNode {
     Event data;
     ListNode* next;
@@ -21,28 +34,24 @@ public:
 
     LinkedList() : head(nullptr) {}
     
-    // Copy constructor
     LinkedList(const LinkedList& other) : head(nullptr) {
         ListNode* curr = other.head;
-        while(curr) {
+        while (curr) {
             append(curr->data);
             curr = curr->next;
         }
     }
     
-    // Assignment operator
     LinkedList& operator=(const LinkedList& other) {
-        if(this != &other) {
-            // Clear current list
-            while(head) {
+        if (this != &other) {
+            while (head) {
                 ListNode* temp = head;
                 head = head->next;
                 delete temp;
             }
             
-            // Copy from other
             ListNode* curr = other.head;
-            while(curr) {
+            while (curr) {
                 append(curr->data);
                 curr = curr->next;
             }
@@ -50,23 +59,28 @@ public:
         return *this;
     }
     
-    // Destructor
     ~LinkedList() {
-        while(head) {
+        while (head) {
             ListNode* temp = head;
             head = head->next;
             delete temp;
         }
     }
 
-    // Insert sorted by time (for daily view)
     void insertSorted(Event e) {
         ListNode* newNode = new ListNode(e);
-        if (!head || head->data.startTime >= e.startTime) {
+        
+        if (!head) {
+            head = newNode;
+            return;
+        }
+        
+        if (e.startTime < head->data.startTime) {
             newNode->next = head;
             head = newNode;
             return;
         }
+        
         ListNode* current = head;
         while (current->next && current->next->data.startTime < e.startTime) {
             current = current->next;
@@ -75,7 +89,6 @@ public:
         current->next = newNode;
     }
 
-    // Insert at end (for Hash Map chains)
     void append(Event e) {
         ListNode* newNode = new ListNode(e);
         if (!head) {
@@ -83,11 +96,12 @@ public:
             return;
         }
         ListNode* temp = head;
-        while (temp->next) temp = temp->next;
+        while (temp->next) {
+            temp = temp->next;
+        }
         temp->next = newNode;
     }
 
-    // Check time conflict
     Event* checkConflict(string start, string end) {
         ListNode* curr = head;
         while (curr) {
@@ -100,11 +114,10 @@ public:
         return nullptr;
     }
     
-    // Get formatted display
     void displayFormatted() {
         ListNode* curr = head;
         int count = 1;
-        while(curr) {
+        while (curr) {
             cout << "\n  +--------------- EVENT #" << count << " ----------------+\n";
             cout << "  | Title    : " << left << setw(30) << curr->data.title << " |\n";
             cout << "  | ID       : " << left << setw(30) << curr->data.id << " |\n";
@@ -112,6 +125,12 @@ public:
                  (curr->data.startTime + " - " + curr->data.getEndTime()) << " |\n";
             cout << "  | Priority : " << left << setw(30) << 
                  to_string(curr->data.priority) << " |\n";
+            
+            // ADDED: Display description if it exists
+            if (!curr->data.description.empty()) {
+                cout << "  | Descrip. : " << left << setw(30) << curr->data.description << " |\n";
+            }
+            
             cout << "  +-----------------------------------------------+\n";
             curr = curr->next;
             count++;
@@ -119,9 +138,6 @@ public:
     }
 };
 
-// ==========================================
-// 2. BINARY SEARCH TREE (Organizes Dates)
-// ==========================================
 struct BSTNode {
     string date;
     LinkedList events;
@@ -136,14 +152,12 @@ public:
 
     BST() : root(nullptr) {}
     
-    // Copy constructor
     BST(const BST& other) : root(nullptr) {
         copyTree(other.root);
     }
     
-    // Assignment operator
     BST& operator=(const BST& other) {
-        if(this != &other) {
+        if (this != &other) {
             clearTree(root);
             root = nullptr;
             copyTree(other.root);
@@ -151,7 +165,6 @@ public:
         return *this;
     }
     
-    // Destructor
     ~BST() {
         clearTree(root);
     }
@@ -165,13 +178,14 @@ public:
     }
     
     void displayDates(BSTNode* node) {
-        if (!node) return;
+        if (!node) {
+            return;
+        }
         displayDates(node->left);
         cout << "   * " << node->date << " (" << countEvents(node->events.head) << " events)\n";
         displayDates(node->right);
     }
     
-    // Get events for a date (formatted)
     void displayEventsByDate(string date) {
         BSTNode* node = search(date);
         if (!node) {
@@ -188,34 +202,53 @@ private:
             newNode->events.insertSorted(e);
             return newNode;
         }
-        if (date < node->date)
+        
+        string date1 = convertToComparable(date);
+        string date2 = convertToComparable(node->date);
+        
+        if (date1 < date2) {
             node->left = insertRec(node->left, date, e);
-        else if (date > node->date)
+        } else if (date1 > date2) {
             node->right = insertRec(node->right, date, e);
-        else {
+        } else {
             node->events.insertSorted(e);
         }
         return node;
     }
 
     BSTNode* searchRec(BSTNode* node, string date) {
-        if (!node || node->date == date) return node;
-        if (date < node->date) return searchRec(node->left, date);
+        if (!node) {
+            return nullptr;
+        }
+        
+        string date1 = convertToComparable(date);
+        string date2 = convertToComparable(node->date);
+        
+        if (date1 == date2) {
+            return node;
+        }
+        if (date1 < date2) {
+            return searchRec(node->left, date);
+        }
         return searchRec(node->right, date);
     }
 
     int countEvents(ListNode* head) {
         int c = 0;
-        while(head) { c++; head = head->next; }
+        while (head) { 
+            c++; 
+            head = head->next; 
+        }
         return c;
     }
     
     void copyTree(BSTNode* node) {
-        if(!node) return;
+        if (!node) {
+            return;
+        }
         
-        // Copy events from this node
         ListNode* curr = node->events.head;
-        while(curr) {
+        while (curr) {
             insert(node->date, curr->data);
             curr = curr->next;
         }
@@ -225,60 +258,68 @@ private:
     }
     
     void clearTree(BSTNode* node) {
-        if(!node) return;
+        if (!node) {
+            return;
+        }
         clearTree(node->left);
         clearTree(node->right);
         delete node;
     }
 };
 
-// ==========================================
-// 3. MIN HEAP (Priority Queue for Upcoming Events)
-// ==========================================
 class MinHeap {
     Event* arr;
     int capacity;
     int size;
 
 public:
-    // Constructor
-    MinHeap(int cap = 100) : capacity(cap), size(0) {
+    MinHeap(int cap = INITIAL_HEAP_CAPACITY) : capacity(cap), size(0) {
         arr = new Event[capacity];
     }
     
-    // Copy constructor
     MinHeap(const MinHeap& other) : capacity(other.capacity), size(other.size) {
         arr = new Event[capacity];
-        for(int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             arr[i] = other.arr[i];
         }
     }
     
-    // Assignment operator
     MinHeap& operator=(const MinHeap& other) {
         if (this != &other) {
             delete[] arr;
             capacity = other.capacity;
             size = other.size;
             arr = new Event[capacity];
-            for(int i = 0; i < size; i++) {
+            for (int i = 0; i < size; i++) {
                 arr[i] = other.arr[i];
             }
         }
         return *this;
     }
     
-    // Destructor
     ~MinHeap() { 
         delete[] arr; 
     }
 
-    int parent(int i) { return (i - 1) / 2; }
-    int left(int i) { return (2 * i + 1); }
-    int right(int i) { return (2 * i + 2); }
+    int parent(int i) { 
+        return (i - 1) / 2; 
+    }
+    
+    int left(int i) { 
+        return (2 * i + 1); 
+    }
+    
+    int right(int i) { 
+        return (2 * i + 2); 
+    }
 
     bool isSmaller(Event a, Event b) {
-        if (a.date != b.date) return a.date < b.date;
+        string dateA = convertToComparable(a.date);
+        string dateB = convertToComparable(b.date);
+        
+        if (dateA != dateB) { 
+            return dateA < dateB;
+        }
         return a.startTime < b.startTime;
     }
 
@@ -286,7 +327,7 @@ public:
         if (size == capacity) {
             capacity *= 2;
             Event* newArr = new Event[capacity];
-            for(int i = 0; i < size; i++) {
+            for (int i = 0; i < size; i++) {
                 newArr[i] = arr[i];
             }
             delete[] arr;
@@ -306,32 +347,39 @@ public:
     }
 
     void displayTop(int k) {
-        if(size == 0) {
+        if (size == 0) {
             cout << "\n   No upcoming events\n";
             return;
         }
         
-        // Create a copy to extract without affecting the original
         MinHeap tempHeap(*this);
         
-        cout << "\nNext " << k << " Upcoming Events:\n";
+        cout << "\nNext Upcoming Events:\n";
         cout << "--------------------------------------------------------------\n";
         
         int count = 0;
-        while(tempHeap.size > 0 && count < k) {
+        while (tempHeap.size > 0 && count < k) {
             Event e = tempHeap.extractMin();
             cout << "\n  * " << e.date << " | " << e.startTime << " - " << e.getEndTime() << "\n";
             cout << "    " << e.title << " (Priority: " << e.priority << ", ID: " << e.id << ")\n";
+            
+            // Display description if it exists
+            if (!e.description.empty()) {
+                cout << "    Description: " << e.description << "\n";
+            }
+            
             count++;
         }
         
-        if(count == 0) {
+        if (count == 0) {
             cout << "   No upcoming events\n";
         }
     }
 
     Event extractMin() {
-        if (size <= 0) return Event();
+        if (size <= 0) {
+            return Event();
+        }
         if (size == 1) {
             size--;
             return arr[0];
@@ -349,8 +397,12 @@ public:
         int r = right(i);
         int smallest = i;
 
-        if (l < size && isSmaller(arr[l], arr[smallest])) smallest = l;
-        if (r < size && isSmaller(arr[r], arr[smallest])) smallest = r;
+        if (l < size && isSmaller(arr[l], arr[smallest])) {
+            smallest = l;
+        }
+        if (r < size && isSmaller(arr[r], arr[smallest])) {
+            smallest = r;
+        }
 
         if (smallest != i) {
             Event temp = arr[i];
@@ -360,41 +412,39 @@ public:
         }
     }
     
-    int getSize() { return size; }
+    int getSize() { 
+        return size; 
+    }
     
-    // Clear all events
     void clear() {
         size = 0;
     }
     
-    // Check if empty
-    bool isEmpty() { return size == 0; }
+    bool isEmpty() { 
+        return size == 0; 
+    }
 };
 
-// ==========================================
-// 4. HASH TABLE (For ID Search)
-// ==========================================
 class HashTable {
-    static const int TABLE_SIZE = 10;
+    static const int TABLE_SIZE = HASH_TABLE_SIZE;
     LinkedList* table[TABLE_SIZE];
 
 public:
     HashTable() {
-        for (int i = 0; i < TABLE_SIZE; i++)
+        for (int i = 0; i < TABLE_SIZE; i++) {
             table[i] = new LinkedList();
+        }
     }
     
-    // Copy constructor
     HashTable(const HashTable& other) {
-        for(int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < TABLE_SIZE; i++) {
             table[i] = new LinkedList(*(other.table[i]));
         }
     }
     
-    // Assignment operator
     HashTable& operator=(const HashTable& other) {
-        if(this != &other) {
-            for(int i = 0; i < TABLE_SIZE; i++) {
+        if (this != &other) {
+            for (int i = 0; i < TABLE_SIZE; i++) {
                 delete table[i];
                 table[i] = new LinkedList(*(other.table[i]));
             }
@@ -402,17 +452,19 @@ public:
         return *this;
     }
     
-    // Destructor
     ~HashTable() {
-        for(int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < TABLE_SIZE; i++) {
             delete table[i];
         }
     }
 
     int hashFunction(string key) {
-        int sum = 0;
-        for (char c : key) sum += c;
-        return sum % TABLE_SIZE;
+        // DJB2 hash algorithm 
+        unsigned long hash = 5381;
+        for (char c : key) {
+            hash = hash * 33 + c; 
+        }
+        return hash % TABLE_SIZE;
     }
 
     void insert(Event e) {
@@ -424,22 +476,26 @@ public:
         int index = hashFunction(id);
         ListNode* curr = table[index]->head;
         while (curr) {
-            if (curr->data.id == id) return &(curr->data);
+            if (curr->data.id == id) {
+                return &(curr->data);
+            }
             curr = curr->next;
         }
         return nullptr;
     }
 
     void displayStatus() {
-        for(int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < TABLE_SIZE; i++) {
             cout << "   [" << i << "]: ";
             ListNode* curr = table[i]->head;
-            if(!curr) {
+            if (!curr) {
                 cout << "EMPTY";
             } else {
                 int count = 0;
-                while(curr) {
-                    if(count > 0) cout << " -> ";
+                while (curr) {
+                    if (count > 0) {
+                        cout << " -> ";
+                    }
                     cout << curr->data.id;
                     curr = curr->next;
                     count++;
@@ -450,12 +506,12 @@ public:
         }
     }
     
-    // Get table for deletion operations
-    LinkedList** getTable() { return table; }
+    LinkedList** getTable() { 
+        return table; 
+    }
     
-    // Clear all events
     void clear() {
-        for(int i = 0; i < TABLE_SIZE; i++) {
+        for (int i = 0; i < TABLE_SIZE; i++) {
             delete table[i];
             table[i] = new LinkedList();
         }

@@ -4,18 +4,24 @@
 #include <iostream>
 #include <iomanip>
 #include <unordered_set>
+#include <vector>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
 void saveRec(BSTNode* node, ofstream& file) {
-    if (!node) return;
+    if (!node) {
+        return;
+    }
     saveRec(node->left, file);
     
     ListNode* curr = node->events.head;
-    while(curr) {
+    while (curr) {
         Event e = curr->data;
-        file << e.id << "," << e.title << "," << e.date << "," 
-             << e.startTime << "," << e.durationMins << "," << e.priority << "\n";
+        file << e.id << "," << e.title << "," << e.date << ","  
+             << e.startTime << "," << e.durationMins << "," << e.priority 
+             << "," << e.description << "\n";
         curr = curr->next;
     }
     
@@ -23,16 +29,18 @@ void saveRec(BSTNode* node, ofstream& file) {
 }
 
 void saveRec(BSTNode* node, ofstream& file, unordered_set<string>& savedIDs) {
-    if (!node) return;
+    if (!node) {
+        return;
+    }
     saveRec(node->left, file, savedIDs);
     
     ListNode* curr = node->events.head;
-    while(curr) {
-        // Check if event ID already saved (to avoid duplicates)
+    while (curr) {
         if (savedIDs.find(curr->data.id) == savedIDs.end()) {
             Event e = curr->data;
-            file << e.id << "," << e.title << "," << e.date << "," 
-                 << e.startTime << "," << e.durationMins << "," << e.priority << "\n";
+            file << e.id << "," << e.title << "," << e.date << ","  
+                 << e.startTime << "," << e.durationMins << "," << e.priority 
+                 << "," << e.description << "\n";
             savedIDs.insert(e.id);
         }
         curr = curr->next;
@@ -48,14 +56,50 @@ void saveEventsToFile(string filename, BST* bst) {
         return;
     }
     
-    unordered_set<string> savedIDs; // Track saved event IDs
+    unordered_set<string> savedIDs;
     saveRec(bst->root, outFile, savedIDs);
     outFile.close();
     
-    cout << "\n==============================================================\n";
+    cout << "\n-----------------------------------------------------------\n";
     cout << "                    DATA SAVED SUCCESSFULLY!             \n";
-    cout << "==============================================================\n";
+    cout << "-----------------------------------------------------------\n";
     cout << "Saved " << savedIDs.size() << " unique events to: " << filename << "\n";
+}
+
+// Helper function to extract counter from new ID format
+int extractCounterFromID(const string& id) {
+    
+    if (id.find("EVT_") != 0) {
+        return 0; // Not our format
+    }
+    
+    size_t lastUnderscore = id.find_last_of('_');
+    if (lastUnderscore == string::npos || lastUnderscore == 3) {
+        string numStr = id.substr(4); 
+        try {
+            return stoi(numStr) - 12340; // Convert to counter
+        } catch (...) {
+            return 0;
+        }
+    }
+    
+    // Get the part after last underscore
+    string counterStr = id.substr(lastUnderscore + 1);
+    try {
+        return stoi(counterStr) - 12340; // Convert to counter
+    } catch (...) {
+        size_t secondLast = id.find_last_of('_', lastUnderscore - 1);
+        if (secondLast != string::npos) {
+            counterStr = id.substr(secondLast + 1, lastUnderscore - secondLast - 1);
+            try {
+                return stoi(counterStr) - 12340;
+            } catch (...) {
+                return 0;
+            }
+        }
+    }
+    
+    return 0;
 }
 
 void loadEventsFromFile(string filename, CalendarSystem& sys) {
@@ -65,46 +109,50 @@ void loadEventsFromFile(string filename, CalendarSystem& sys) {
         return;
     }
     
-    // Clear existing events first (or the CalendarSystem should have a clear() method)
-    // We'll need to add a clear method to CalendarSystem
-    
     string line;
     int loaded = 0;
     int duplicates = 0;
-    unordered_set<string> loadedIDs; // Track loaded IDs to avoid duplicates
+    unordered_set<string> loadedIDs;
     
     while (getline(inFile, line)) {
-        if(line.empty()) continue;
-        
-        Event e;
-        string temp = "";
-        int commaCount = 0;
-        
-        for(char c : line) {
-            if(c == ',') {
-                if(commaCount == 0) e.id = temp;
-                else if(commaCount == 1) e.title = temp;
-                else if(commaCount == 2) e.date = temp;
-                else if(commaCount == 3) e.startTime = temp;
-                else if(commaCount == 4) e.durationMins = stoi(temp);
-                
-                temp = "";
-                commaCount++;
-            } else {
-                temp += c;
-            }
-        }
-        e.priority = stoi(temp);
-        
-        // Check for duplicate ID before adding
-        if (loadedIDs.find(e.id) != loadedIDs.end()) {
-            duplicates++;
+        if (line.empty()) {
             continue;
         }
         
-        sys.addEventDirect(e);
-        loadedIDs.insert(e.id);
-        loaded++;
+        Event e;
+        stringstream ss(line);
+        string token;
+        vector<string> tokens;
+
+        // Split line by commas
+        while (getline(ss, token, ',')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() >= 6) {
+            e.id = tokens[0];
+            e.title = tokens[1];
+            e.date = tokens[2];
+            e.startTime = tokens[3];
+            e.durationMins = stoi(tokens[4]);
+            e.priority = stoi(tokens[5]);
+            
+            if (tokens.size() >= 7) {
+                e.description = tokens[6];
+            } else {
+                e.description = "";  // Default empty description
+            }
+            
+            // Check for duplicates
+            if (loadedIDs.find(e.id) != loadedIDs.end()) {
+                duplicates++;
+                continue;
+            }
+            
+            sys.addEventDirect(e);
+            loadedIDs.insert(e.id);
+            loaded++;
+        }
     }
     
     cout << "\n==============================================================\n";

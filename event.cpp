@@ -5,7 +5,9 @@ using namespace std;
 
 // Implementation of the getEndTime function
 string Event::getEndTime() const {
-    if (startTime.empty()) return "00:00";
+    if (startTime.empty()) {
+        return "00:00";
+    }
 
     // Parse "HH:MM" manually or using stoi
     int h = stoi(startTime.substr(0, 2));
@@ -18,7 +20,7 @@ string Event::getEndTime() const {
     h += m / 60;
     m %= 60;
 
-    // Handle day overflow (optional, usually wraps around 24h)
+    // Handle day overflow 
     h %= 24;
 
     // Format back to string "HH:MM"

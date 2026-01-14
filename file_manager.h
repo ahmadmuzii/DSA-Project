@@ -2,10 +2,10 @@
 #define FILE_MANAGER_H
 
 #include <string>
-#include "calendar.h" // Forward declaration if needed
+#include "calendar.h"
 
 // Function prototypes
-void saveEventsToFile(string filename, BST* bst);
-void loadEventsFromFile(string filename, class CalendarSystem& sys);
+void saveEventsToFile(std::string filename, BST* bst);
+void loadEventsFromFile(std::string filename, class CalendarSystem& sys);
 
 #endif
