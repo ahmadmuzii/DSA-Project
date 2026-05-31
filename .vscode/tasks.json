@@ -2,33 +2,76 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: Build Calendar System", // <-- NEW LABEL
-            "command": "C:\\Program Files\\CodeBlocks\\MinGW\\bin\\g++.exe",
+            "label": "Build Backend CLI",
+            "command": "g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                // 🛑 LIST ALL SOURCE FILES HERE 🛑
-                "${workspaceFolder}\\main.cpp",
-                "${workspaceFolder}\\calendar.cpp",
-                "${workspaceFolder}\\event.cpp",
-                "${workspaceFolder}\\file_manager.cpp",
+                "-std=c++17",
+                "-Ibackend/include",
+                "${workspaceFolder}\\backend\\src\\main.cpp",
+                "${workspaceFolder}\\backend\\src\\event.cpp",
+                "${workspaceFolder}\\backend\\src\\calendar.cpp",
+                "${workspaceFolder}\\backend\\src\\file_manager.cpp",
+                "${workspaceFolder}\\backend\\src\\ds_utility.cpp",
+                "${workspaceFolder}\\backend\\src\\linked_list.cpp",
+                "${workspaceFolder}\\backend\\src\\bst.cpp",
+                "${workspaceFolder}\\backend\\src\\min_heap.cpp",
+                "${workspaceFolder}\\backend\\src\\hash_table.cpp",
                 "-o",
-                // 🛑 USE A FIXED EXECUTABLE NAME 🛑
-                "${workspaceFolder}\\calendar_app.exe",
-                // OPTIONAL: This helps fix the 'WinMain' error in some MinGW setups
+                "${workspaceFolder}\\calendar_cli.exe",
                 "-Wl,-subsystem,console"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": [
-                "$gcc"
+            "problemMatcher": ["$gcc"],
+            "group": "build"
+        },
+        {
+            "type": "cppbuild",
+            "label": "Build Backend Server",
+            "command": "g++.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "-std=c++17",
+                "-Ibackend/include",
+                "${workspaceFolder}\\backend\\src\\server.cpp",
+                "${workspaceFolder}\\backend\\src\\event.cpp",
+                "${workspaceFolder}\\backend\\src\\calendar.cpp",
+                "${workspaceFolder}\\backend\\src\\file_manager.cpp",
+                "${workspaceFolder}\\backend\\src\\ds_utility.cpp",
+                "${workspaceFolder}\\backend\\src\\linked_list.cpp",
+                "${workspaceFolder}\\backend\\src\\bst.cpp",
+                "${workspaceFolder}\\backend\\src\\min_heap.cpp",
+                "${workspaceFolder}\\backend\\src\\hash_table.cpp",
+                "-o",
+                "${workspaceFolder}\\calendar_server.exe",
+                "-Wl,-subsystem,console",
+                "-lws2_32"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
+            "options": {
+                "cwd": "${workspaceFolder}"
             },
-            "detail": "Builds the entire Calendar System project."
+            "problemMatcher": ["$gcc"],
+            "group": "build"
+        },
+        {
+            "type": "npm",
+            "label": "Build Frontend",
+            "script": "build",
+            "path": "frontend",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "type": "npm",
+            "label": "Dev Frontend",
+            "script": "dev",
+            "path": "frontend",
+            "group": "build",
+            "problemMatcher": []
         }
     ],
     "version": "2.0.0"
