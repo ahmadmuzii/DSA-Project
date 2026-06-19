@@ -5,14 +5,16 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <algorithm>
 
 struct BSTNode {
     std::string date;
     LinkedList events;
     std::unique_ptr<BSTNode> left;
     std::unique_ptr<BSTNode> right;
+    int height;
 
-    BSTNode(const std::string& d) : date(d) {}
+    BSTNode(const std::string& d) : date(d), height(1) {}
 };
 
 class BST {
@@ -33,6 +35,11 @@ public:
     BSTNode* getRoot() const { return root.get(); }
 
 private:
+    int getHeight(const std::unique_ptr<BSTNode>& node) const;
+    int getHeight(BSTNode* node) const;
+    int getBalanceFactor(const std::unique_ptr<BSTNode>& node) const;
+    std::unique_ptr<BSTNode> rotateRight(std::unique_ptr<BSTNode> y);
+    std::unique_ptr<BSTNode> rotateLeft(std::unique_ptr<BSTNode> x);
     std::unique_ptr<BSTNode> insertRec(std::unique_ptr<BSTNode> node, const std::string& date, Event e);
     BSTNode* searchRec(BSTNode* node, const std::string& date);
     void forEachRec(BSTNode* node, std::function<void(const Event&)> callback) const;

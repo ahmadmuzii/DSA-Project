@@ -36,6 +36,16 @@
 
 # Build output
 backend/bin/
+backend/build/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
 
 # Frontend
 frontend/node_modules/

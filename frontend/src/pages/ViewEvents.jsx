@@ -10,8 +10,8 @@ export default function ViewEvents() {
   const [mode, setMode] = useState('all')
 
   const fetchAll = useCallback(async () => {
-    const data = await getEvents()
-    setAllEvents(Array.isArray(data) ? data : [])
+    const data = await getEvents(1, 500)
+    setAllEvents(Array.isArray(data.events) ? data.events : [])
   }, [])
 
   useEffect(() => { fetchAll() }, [fetchAll])

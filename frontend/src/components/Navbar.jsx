@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { NavLink } from 'react-router-dom'
 
-export default function Navbar() {
+function Navbar({ theme, onToggleTheme }) {
   const links = [
     { to: '/', label: 'Dashboard' },
     { to: '/add', label: 'Add Event' },
@@ -28,6 +29,11 @@ export default function Navbar() {
           </NavLink>
         ))}
       </div>
+      <button className="theme-toggle" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
     </nav>
   )
 }
+
+export default memo(Navbar)

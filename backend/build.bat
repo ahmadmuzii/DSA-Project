@@ -12,6 +12,7 @@ if not exist %BINDIR% mkdir %BINDIR%
 
 if /I "%1"=="server" goto build_server
 if /I "%1"=="cli" goto build_cli
+if /I "%1"=="test" goto build_test
 if /I "%1"=="all" goto build_all
 if /I "%1"=="" goto build_all
 
@@ -27,6 +28,7 @@ echo Building CLI...
     %SRCDIR%\bst.cpp ^
     %SRCDIR%\min_heap.cpp ^
     %SRCDIR%\hash_table.cpp ^
+    %SRCDIR%\logger.cpp ^
     -o %BINDIR%\calendar_cli.exe
 if %ERRORLEVEL%==0 (echo CLI built: %BINDIR%\calendar_cli.exe) else (echo CLI build failed)
 if not "%1"=="all" exit /b %ERRORLEVEL%
@@ -43,10 +45,28 @@ echo Building Server...
     %SRCDIR%\bst.cpp ^
     %SRCDIR%\min_heap.cpp ^
     %SRCDIR%\hash_table.cpp ^
+    %SRCDIR%\logger.cpp ^
     -o %BINDIR%\calendar_server.exe ^
     -lws2_32
 if %ERRORLEVEL%==0 (echo Server built: %BINDIR%\calendar_server.exe) else (echo Server build failed)
 if not "%1"=="all" exit /b %ERRORLEVEL%
+
+:build_test
+echo Building Tests...
+%GXX% %CXXFLAGS% %INCLUDE% ^
+    %SRCDIR%\test.cpp ^
+    %SRCDIR%\event.cpp ^
+    %SRCDIR%\calendar.cpp ^
+    %SRCDIR%\file_manager.cpp ^
+    %SRCDIR%\ds_utility.cpp ^
+    %SRCDIR%\linked_list.cpp ^
+    %SRCDIR%\bst.cpp ^
+    %SRCDIR%\min_heap.cpp ^
+    %SRCDIR%\hash_table.cpp ^
+    %SRCDIR%\logger.cpp ^
+    -o %BINDIR%\test_runner.exe
+if %ERRORLEVEL%==0 (echo Tests built: %BINDIR%\test_runner.exe) else (echo Test build failed)
+exit /b %ERRORLEVEL%
 
 :build_all
 call :build_cli

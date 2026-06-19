@@ -27,6 +27,48 @@ void BST::copyTree(BSTNode* node) {
     copyTree(node->right.get());
 }
 
+// ---- AVL helpers ----
+
+int BST::getHeight(const std::unique_ptr<BSTNode>& node) const {
+    return node ? node->height : 0;
+}
+
+int BST::getHeight(BSTNode* node) const {
+    return node ? node->height : 0;
+}
+
+int BST::getBalanceFactor(const std::unique_ptr<BSTNode>& node) const {
+    return node ? getHeight(node->left) - getHeight(node->right) : 0;
+}
+
+std::unique_ptr<BSTNode> BST::rotateRight(std::unique_ptr<BSTNode> y) {
+    auto x = std::move(y->left);
+    auto T2 = std::move(x->right);
+
+    x->right = std::move(y);
+    x->right->left = std::move(T2);
+
+    x->right->height = std::max(getHeight(x->right->left), getHeight(x->right->right)) + 1;
+    x->height = std::max(getHeight(x->left), getHeight(x->right)) + 1;
+
+    return x;
+}
+
+std::unique_ptr<BSTNode> BST::rotateLeft(std::unique_ptr<BSTNode> x) {
+    auto y = std::move(x->right);
+    auto T2 = std::move(y->left);
+
+    y->left = std::move(x);
+    y->left->right = std::move(T2);
+
+    y->left->height = std::max(getHeight(y->left->left), getHeight(y->left->right)) + 1;
+    y->height = std::max(getHeight(y->left), getHeight(y->right)) + 1;
+
+    return y;
+}
+
+// ---- insert with AVL balancing ----
+
 void BST::insert(const std::string& date, Event e) {
     root = insertRec(std::move(root), date, std::move(e));
 }
@@ -47,9 +89,33 @@ std::unique_ptr<BSTNode> BST::insertRec(std::unique_ptr<BSTNode> node, const std
         node->right = insertRec(std::move(node->right), date, std::move(e));
     } else {
         node->events.insertSorted(std::move(e));
+        return node;
     }
+
+    node->height = std::max(getHeight(node->left), getHeight(node->right)) + 1;
+
+    int balance = getBalanceFactor(node);
+
+    if (balance > 1 && convertToComparable(date) < convertToComparable(node->left->date))
+        return rotateRight(std::move(node));
+
+    if (balance < -1 && convertToComparable(date) > convertToComparable(node->right->date))
+        return rotateLeft(std::move(node));
+
+    if (balance > 1 && convertToComparable(date) > convertToComparable(node->left->date)) {
+        node->left = rotateLeft(std::move(node->left));
+        return rotateRight(std::move(node));
+    }
+
+    if (balance < -1 && convertToComparable(date) < convertToComparable(node->right->date)) {
+        node->right = rotateRight(std::move(node->right));
+        return rotateLeft(std::move(node));
+    }
+
     return node;
 }
+
+// ---- search / forEach / display (unchanged) ----
 
 BSTNode* BST::search(const std::string& date) {
     return searchRec(root.get(), date);
@@ -100,7 +166,7 @@ void BST::displayDatesRec(BSTNode* node, std::string& result) const {
     if (!node) return;
 
     displayDatesRec(node->left.get(), result);
-    result += "   * " + node->date + " (" + std::to_string(countEvents(node->events.getHead())) + " events)\n";
+    result += "   * " + node->date + " (" + std::to_string(countEvents(node->events.getHead())) + " events, h=" + std::to_string(node->height) + ")\n";
     displayDatesRec(node->right.get(), result);
 }
 

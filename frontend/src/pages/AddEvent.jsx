@@ -1,19 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { addEvent } from '../api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useBlocker } from 'react-router-dom'
 
 export default function AddEvent() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({
-    title: '',
-    date: '',
-    startTime: '',
-    duration: '60',
-    priority: '3',
-    description: ''
-  })
+  const initialForm = { title: '', date: '', startTime: '', duration: '60', priority: '3', description: '' }
+  const [form, setForm] = useState({ ...initialForm })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const submitted = useRef(false)
+
+  const isDirty = !submitted.current && Object.keys(form).some(k => form[k] !== initialForm[k])
+
+  const blocker = useBlocker(isDirty)
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      const confirmLeave = window.confirm('You have unsaved changes. Are you sure you want to leave?')
+      if (confirmLeave) blocker.proceed()
+      else blocker.reset()
+    }
+  }, [blocker.state, blocker])
 
   const validate = () => {
     if (!form.title.trim()) return 'Title is required'
@@ -31,6 +38,7 @@ export default function AddEvent() {
     try {
       const res = await addEvent(form)
       if (res.success) {
+        submitted.current = true
         navigate('/')
       } else {
         setError(res.error || 'Failed to add event')

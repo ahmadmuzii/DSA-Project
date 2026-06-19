@@ -14,12 +14,12 @@ void HashTable::insert(const Event& e) {
     table[index].append(e);
 }
 
-Event* HashTable::search(const std::string& id) const {
+Event* HashTable::search(const std::string& id) {
     int index = hashFunction(id);
     ListNode* curr = table[index].getHead();
     while (curr) {
         if (curr->data.id == id) {
-            return const_cast<Event*>(&(curr->data));
+            return &(curr->data);
         }
         curr = curr->next.get();
     }

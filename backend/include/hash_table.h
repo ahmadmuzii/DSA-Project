@@ -13,7 +13,7 @@ public:
 
     int hashFunction(const std::string& key) const;
     void insert(const Event& e);
-    Event* search(const std::string& id) const;
+    Event* search(const std::string& id);
     bool remove(const std::string& id);
     std::string displayStatus() const;
     void clear();

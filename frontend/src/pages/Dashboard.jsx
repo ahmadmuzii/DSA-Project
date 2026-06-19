@@ -1,37 +1,59 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getEvents, saveToFile, loadFromFile } from '../api'
+import { getEvents, saveToFile, loadFromFile, exportToTXT } from '../api'
 import EventCard from '../components/EventCard'
+import { useToast } from '../components/ToastContext'
 
 export default function Dashboard() {
+  const showToast = useToast()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const perPage = 12
 
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = useCallback(async (p = page) => {
     setLoading(true)
     try {
-      const data = await getEvents()
-      setEvents(Array.isArray(data) ? data : [])
+      const data = await getEvents(p, perPage)
+      setEvents(Array.isArray(data.events) ? data.events : [])
+      setTotal(data.total || 0)
+      setTotalPages(data.totalPages || 1)
+      setPage(data.page || 1)
     } catch (e) {
       setEvents([])
     }
     setLoading(false)
-  }, [])
+  }, [page])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
   const handleSave = async () => {
     const res = await saveToFile()
-    setMessage(res.success ? 'Data saved successfully!' : 'Save failed!')
-    setTimeout(() => setMessage(''), 3000)
+    showToast(res.success ? 'Data saved!' : 'Save failed!', res.success ? 'success' : 'error')
   }
 
   const handleLoad = async () => {
     if (!confirm('Replace all current events with saved data?')) return
     const res = await loadFromFile()
-    setMessage(`Loaded ${res.count || 0} events!`)
+    showToast(`Loaded ${res.count || 0} events!`, 'success')
     fetchEvents()
-    setTimeout(() => setMessage(''), 3000)
+  }
+
+  const handleExport = async () => {
+    try {
+      const content = await exportToTXT()
+      const blob = new Blob([content], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'calendar_export.txt'
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast('Exported successfully!', 'success')
+    } catch {
+      showToast('Export failed!', 'error')
+    }
   }
 
   return (
@@ -39,12 +61,11 @@ export default function Dashboard() {
       <div className="page-header">
         <h1>Dashboard</h1>
         <div className="header-actions">
-          <button className="btn btn-outline" onClick={handleSave}>Save to File</button>
-          <button className="btn btn-outline" onClick={handleLoad}>Load from File</button>
+          <button className="btn btn-outline" onClick={handleSave} title="Save events to file">Save</button>
+          <button className="btn btn-outline" onClick={handleLoad} title="Load events from file">Load</button>
+          <button className="btn btn-outline" onClick={handleExport} title="Export events as TXT">Export</button>
         </div>
       </div>
-
-      {message && <div className="toast">{message}</div>}
 
       <div className="stats-row">
         <div className="stat-card">
@@ -74,11 +95,23 @@ export default function Dashboard() {
           <p>No events yet. Add one to get started!</p>
         </div>
       ) : (
-        <div className="events-grid">
-          {events.map(e => (
-            <EventCard key={e.id} event={e} onUpdate={fetchEvents} />
-          ))}
-        </div>
+        <>
+          <div className="events-grid">
+            {events.map(e => (
+              <EventCard key={e.id} event={e} onUpdate={() => fetchEvents(page)} />
+            ))}
+          </div>
+
+          <div className="pagination">
+            <button className="btn btn-outline" disabled={page <= 1} onClick={() => fetchEvents(page - 1)}>
+              ← Prev
+            </button>
+            <span className="pagination-info">Page {page} of {totalPages} ({total} events)</span>
+            <button className="btn btn-outline" disabled={page >= totalPages} onClick={() => fetchEvents(page + 1)}>
+              Next →
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

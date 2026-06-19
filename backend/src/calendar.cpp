@@ -1,5 +1,6 @@
 #include "calendar.h"
 #include "ds_utility.h"
+#include "config.h"
 #include <fstream>
 #include <cstdlib>
 #include <iomanip>
@@ -10,7 +11,7 @@ static int& getEventCounter() {
     static int unsavedChanges = 0;
 
     if (counter == -1) {
-        std::ifstream file("event_counter.txt");
+        std::ifstream file(Config::COUNTER_FILE);
         if (file) {
             file >> counter;
             if (counter < 0) counter = 0;
@@ -19,7 +20,7 @@ static int& getEventCounter() {
         }
 
         std::atexit([]() {
-            std::ofstream file("event_counter.txt");
+            std::ofstream file(Config::COUNTER_FILE);
             if (file) file << counter;
         });
     }
@@ -31,10 +32,10 @@ static std::string generateID() {
     int& counter = getEventCounter();
     counter++;
 
-    static int& unsaved = *new int(0);
+    static int unsaved = 0;
     unsaved++;
     if (unsaved >= 10) {
-        std::ofstream file("event_counter.txt");
+        std::ofstream file(Config::COUNTER_FILE);
         if (file) file << counter;
         unsaved = 0;
     }

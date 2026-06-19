@@ -6,6 +6,7 @@
 #include <ctime>
 #include "calendar.h"
 #include "file_manager.h"
+#include "config.h"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -140,10 +141,10 @@ int main() {
     int choice;
 
     struct STAT buffer;
-    if (STAT("calendar_data.txt", &buffer) == 0) {
+    if (STAT(Config::DATA_FILE.c_str(), &buffer) == 0) {
         if (buffer.st_size > 0) {
             cout << "\n[INFO] Loading saved data from calendar_data.txt...\n";
-            int loaded = loadEventsFromFile("calendar_data.txt", calendar);
+            int loaded = loadEventsFromFile(Config::DATA_FILE, calendar);
             if (loaded > 0) {
                 cout << "[INFO] Data loaded successfully!\n";
             }
@@ -436,7 +437,7 @@ int main() {
 
                 switch (fc) {
                     case 1:
-                        saveEventsToFile("calendar_data.txt", calendar);
+                        saveEventsToFile(Config::DATA_FILE, calendar);
                         break;
 
                     case 2: {
@@ -447,7 +448,7 @@ int main() {
 
                         if (confirm == 'y' || confirm == 'Y') {
                             calendar.clearAllEvents();
-                            loadEventsFromFile("calendar_data.txt", calendar);
+                            loadEventsFromFile(Config::DATA_FILE, calendar);
                         } else {
                             cout << "Load cancelled.\n";
                         }
@@ -455,7 +456,7 @@ int main() {
                     }
 
                     case 3:
-                        if (calendar.exportFormattedTXT("calendar_export.txt")) {
+                        if (calendar.exportFormattedTXT(Config::EXPORT_FILE)) {
                             cout << "[SUCCESS] Calendar exported to calendar_export.txt with formatting!\n";
                         } else {
                             cout << "[ERROR] Error opening file for export!\n";
@@ -502,7 +503,7 @@ int main() {
             case 0: {
                 printHeader("EXITING CALENDAR SYSTEM");
                 cout << "Saving data...\n";
-                saveEventsToFile("calendar_data.txt", calendar);
+                saveEventsToFile(Config::DATA_FILE, calendar);
                 cout << "Goodbye!\n";
                 break;
             }

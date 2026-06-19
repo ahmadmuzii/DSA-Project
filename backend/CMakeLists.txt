@@ -4,9 +4,8 @@ project(CalendarSystem LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Source files
-set(SOURCES
-    src/main.cpp
+# Common library sources (all implementation files excluding main entry points)
+set(LIB_SOURCES
     src/event.cpp
     src/calendar.cpp
     src/file_manager.cpp
@@ -15,30 +14,18 @@ set(SOURCES
     src/bst.cpp
     src/min_heap.cpp
     src/hash_table.cpp
-)
-
-set(SERVER_SOURCES
-    src/server.cpp
-    src/event.cpp
-    src/calendar.cpp
-    src/file_manager.cpp
-    src/ds_utility.cpp
-    src/linked_list.cpp
-    src/bst.cpp
-    src/min_heap.cpp
-    src/hash_table.cpp
+    src/logger.cpp
 )
 
 # Include headers
 include_directories(include)
 
 # CLI executable
-add_executable(calendar_cli ${SOURCES})
+add_executable(calendar_cli src/main.cpp ${LIB_SOURCES})
 
-# Server executable (only if httplib.h is present)
-add_executable(calendar_server ${SERVER_SOURCES})
+# Server executable
+add_executable(calendar_server src/server.cpp ${LIB_SOURCES})
 target_compile_definitions(calendar_server PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
-# Test executable
-add_executable(test_runner src/test.cpp ${SERVER_SOURCES})
-target_link_libraries(test_runner)
+# Test executable (doctest provides its own main)
+add_executable(test_runner src/test.cpp ${LIB_SOURCES})
